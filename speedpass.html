@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Speedpass</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+  <style>html, body { margin: 0; height: 100%; } #map { height: 100%; }</style>
+</head>
+<body>
+<div id="map"></div>
+<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+<script>
+const dest = new URLSearchParams(location.search).get("destination");
+if (!dest) alert("No destination set.");
+
+navigator.geolocation.getCurrentPosition(async pos => {
+  const start = `${pos.coords.longitude},${pos.coords.latitude}`;
+  const apiKey = "5b3ce3597851110001cf6248b878957b2bfb434ea5e2c820ad300a8b";
+
+  const geoResp = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(dest)}`);
+  const geoData = await geoResp.json();
+  if (!geoData.features.length) return alert("Destination not found");
+
+  const [lon, lat] = geoData.features[0].geometry.coordinates;
+
+  const map = L.map("map").setView([lat, lon], 13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+
+  L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(map).bindPopup("You");
+  L.marker([lat, lon]).addTo(map).bindPopup(dest);
+
+}, err => alert("Location error: " + err.message));
+</script>
+</body>
+</html>

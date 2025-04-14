@@ -9,6 +9,7 @@
   <style>
     html, body { margin: 0; height: 100%; }
     #map { height: 100%; }
+
     #settings-btn {
       position: absolute;
       top: 12px;
@@ -21,6 +22,7 @@
       font-size: 14px;
       cursor: pointer;
     }
+
     #theme-selector {
       position: absolute;
       top: 50px;
@@ -32,9 +34,26 @@
       border-radius: 6px;
       display: none;
     }
+
     #theme-selector select {
       font-size: 14px;
       width: 160px;
+    }
+
+    #install-screen {
+      position: fixed; inset: 0;
+      background: white; z-index: 2000;
+      display: flex; flex-direction: column;
+      justify-content: center; align-items: center;
+      text-align: center; padding: 20px;
+      font-family: sans-serif;
+    }
+
+    #install-screen button {
+      margin-top: 20px; padding: 10px 20px;
+      font-size: 16px; border: none;
+      background: orange; color: white;
+      border-radius: 8px; cursor: pointer;
     }
   </style>
 </head>
@@ -52,24 +71,36 @@
     </select>
   </div>
 
+  <div id="install-screen">
+    <h2>Install Speedpass</h2>
+    <p>For the best experience, add this web app to your Home Screen.</p>
+    <p>Tap the <strong>Share</strong> button <span style="font-size: 1.2em;">🔗</span> and choose <strong>“Add to Home Screen”</strong>.</p>
+    <button onclick="hideInstallScreen()">I’ll do it later</button>
+  </div>
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
+function hideInstallScreen() {
+  document.getElementById("install-screen").style.display = "none";
+}
+
+if (window.navigator.standalone || window.matchMedia('(display-mode: standalone)').matches) {
+  hideInstallScreen();
+}
+
 const settingsBtn = document.getElementById("settings-btn");
 const themeSelector = document.getElementById("theme-selector");
 const themeSelect = document.getElementById("theme");
 
-// Toggle settings panel
 settingsBtn.onclick = () => {
   themeSelector.style.display = themeSelector.style.display === "none" ? "block" : "none";
 };
 
-// Save selection
 themeSelect.onchange = () => {
   localStorage.setItem("theme", themeSelect.value);
   location.reload();
 };
 
-// Apply theme
 function applyTheme(theme) {
   let tileLayer = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
   if (theme === "dark") tileLayer = "https://tiles.stadiamaps.com/tiles/alidade_dark/{z}/{x}/{y}{r}.png";
@@ -78,7 +109,6 @@ function applyTheme(theme) {
   return tileLayer;
 }
 
-// Auto-daylight logic
 function getAutoDaylightTheme() {
   const now = new Date();
   const hour = now.getHours();
@@ -89,7 +119,6 @@ function getAutoDaylightTheme() {
   return "dark";                                      // Night
 }
 
-// Detect theme
 let selectedTheme = localStorage.getItem("theme") || "auto-daylight";
 themeSelect.value = selectedTheme;
 if (selectedTheme === "auto-daylight") selectedTheme = getAutoDaylightTheme();
@@ -98,7 +127,6 @@ if (selectedTheme === "auto-mode") {
 }
 const tileLayerURL = applyTheme(selectedTheme);
 
-// Destination
 const dest = new URLSearchParams(location.search).get("destination");
 if (!dest) alert("No destination set.");
 
@@ -107,7 +135,6 @@ navigator.geolocation.getCurrentPosition(async pos => {
   const userLon = pos.coords.longitude;
   const apiKey = "5b3ce3597851110001cf6248b878957b2bfb434ea5e2c820ad300a8b";
 
-  // Geocode destination with Kuwait boundary
   const geoResp = await fetch(
     `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(dest)}&boundary.country=KWT`
   );

@@ -3,31 +3,127 @@
 <head>
   <title>Speedpass</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-  <style>html, body { margin: 0; height: 100%; } #map { height: 100%; }</style>
+  <style>
+    html, body { margin: 0; height: 100%; }
+    #map { height: 100%; }
+    #settings-btn {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      z-index: 1000;
+      background: rgba(255,255,255,0.9);
+      border: none;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    #theme-selector {
+      position: absolute;
+      top: 50px;
+      right: 12px;
+      z-index: 1001;
+      background: white;
+      border: 1px solid #ccc;
+      padding: 8px;
+      border-radius: 6px;
+      display: none;
+    }
+    #theme-selector select {
+      font-size: 14px;
+      width: 160px;
+    }
+  </style>
 </head>
 <body>
-<div id="map"></div>
+  <div id="map"></div>
+  <button id="settings-btn">⚙️</button>
+  <div id="theme-selector">
+    <label for="theme">Theme:</label><br>
+    <select id="theme">
+      <option value="auto-daylight">Auto – Daylight</option>
+      <option value="auto-mode">Auto – Mode</option>
+      <option value="light">Light</option>
+      <option value="dark">Dark</option>
+      <option value="sepia">Sepia</option>
+    </select>
+  </div>
+
 <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
 <script>
+const settingsBtn = document.getElementById("settings-btn");
+const themeSelector = document.getElementById("theme-selector");
+const themeSelect = document.getElementById("theme");
+
+// Toggle settings panel
+settingsBtn.onclick = () => {
+  themeSelector.style.display = themeSelector.style.display === "none" ? "block" : "none";
+};
+
+// Save selection
+themeSelect.onchange = () => {
+  localStorage.setItem("theme", themeSelect.value);
+  location.reload();
+};
+
+// Apply theme
+function applyTheme(theme) {
+  let tileLayer = "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png";
+  if (theme === "dark") tileLayer = "https://tiles.stadiamaps.com/tiles/alidade_dark/{z}/{x}/{y}{r}.png";
+  else if (theme === "light") tileLayer = "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png";
+  else if (theme === "sepia") tileLayer = "https://tiles.stadiamaps.com/tiles/alidade_smooth/{z}/{x}/{y}{r}.png";
+  return tileLayer;
+}
+
+// Auto-daylight logic
+function getAutoDaylightTheme() {
+  const now = new Date();
+  const hour = now.getHours();
+  if (hour >= 6 && hour < 12) return "light";         // Morning
+  if (hour >= 12 && hour < 17) return "light";        // Afternoon
+  if (hour >= 17 && hour < 19) return "sepia";        // Sunset
+  if (hour >= 5 && hour < 6) return "sepia";          // Sunrise
+  return "dark";                                      // Night
+}
+
+// Detect theme
+let selectedTheme = localStorage.getItem("theme") || "auto-daylight";
+themeSelect.value = selectedTheme;
+if (selectedTheme === "auto-daylight") selectedTheme = getAutoDaylightTheme();
+if (selectedTheme === "auto-mode") {
+  selectedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? "dark" : "light";
+}
+const tileLayerURL = applyTheme(selectedTheme);
+
+// Destination
 const dest = new URLSearchParams(location.search).get("destination");
 if (!dest) alert("No destination set.");
 
 navigator.geolocation.getCurrentPosition(async pos => {
-  const start = `${pos.coords.longitude},${pos.coords.latitude}`;
+  const userLat = pos.coords.latitude;
+  const userLon = pos.coords.longitude;
   const apiKey = "5b3ce3597851110001cf6248b878957b2bfb434ea5e2c820ad300a8b";
 
-  const geoResp = await fetch(`https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(dest)}`);
+  // Geocode destination with Kuwait boundary
+  const geoResp = await fetch(
+    `https://api.openrouteservice.org/geocode/search?api_key=${apiKey}&text=${encodeURIComponent(dest)}&boundary.country=KWT`
+  );
   const geoData = await geoResp.json();
   if (!geoData.features.length) return alert("Destination not found");
 
-  const [lon, lat] = geoData.features[0].geometry.coordinates;
+  const [destLon, destLat] = geoData.features[0].geometry.coordinates;
 
-  const map = L.map("map").setView([lat, lon], 13);
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png").addTo(map);
+  const midLat = (userLat + destLat) / 2;
+  const midLon = (userLon + destLon) / 2;
 
-  L.marker([pos.coords.latitude, pos.coords.longitude]).addTo(map).bindPopup("You");
-  L.marker([lat, lon]).addTo(map).bindPopup(dest);
+  const map = L.map("map").setView([midLat, midLon], 12);
+  L.tileLayer(tileLayerURL, { attribution: "© OpenStreetMap" }).addTo(map);
+
+  L.marker([userLat, userLon]).addTo(map).bindPopup("📍 Your Location").openPopup();
+  L.marker([destLat, destLon]).addTo(map).bindPopup("📌 " + dest);
 
 }, err => alert("Location error: " + err.message));
 </script>

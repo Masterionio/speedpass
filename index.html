@@ -1,74 +1,50 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Speedpass</title>
-
-  <!-- Leaflet CSS -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-  />
-
-  <!-- Theme + App install meta -->
-  <meta name="theme-color" content="#00ff99" />
-  <link rel="manifest" href="manifest.json" />
-  <link rel="apple-touch-icon" href="icon-192.png" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-
+  <title>Speedpass Earth View</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <style>
     html, body {
       margin: 0;
       padding: 0;
       height: 100%;
-      background: black;
+      background: #000;
     }
+
     #map {
-      width: 100%;
       height: 100%;
+      width: 100%;
+    }
+
+    /* Responsive tweaks */
+    @media (max-width: 768px) {
+      #map {
+        font-size: 14px;
+      }
     }
   </style>
 </head>
 <body>
-
   <div id="map"></div>
 
-  <!-- Leaflet JS -->
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-  </script>
-
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script>
-    const urlParams = new URLSearchParams(window.location.search);
-    const destination = urlParams.get('destination') || 'Kuwait';
-
-    const map = L.map('map').setView([29.3759, 47.9774], 13);
+    const map = L.map('map', {
+      center: [20, 0],           // Center of the world
+      zoom: 2,                   // Starting zoom
+      minZoom: 2,
+      maxZoom: 5,
+      worldCopyJump: true,
+      maxBounds: [[-85, -180], [85, 180]], // Keep it globe-like
+    });
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
+      attribution: '&copy; OpenStreetMap contributors',
+      noWrap: true, // Prevents endless horizontal panning
     }).addTo(map);
-
-    // Geocode destination using Nominatim
-    fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${destination}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data.length > 0) {
-          const dest = data[0];
-          const lat = parseFloat(dest.lat);
-          const lon = parseFloat(dest.lon);
-
-          // Marker at destination
-          L.marker([lat, lon]).addTo(map)
-            .bindPopup(`Destination: ${destination}`)
-            .openPopup();
-
-          map.setView([lat, lon], 14);
-        } else {
-          alert('Destination not found.');
-        }
-      });
   </script>
 </body>
 </html>

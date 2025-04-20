@@ -1,11 +1,11 @@
 {
   "name": "Speedpass",
   "short_name": "Speedpass",
-  "start_url": "/speedpass/?destination=Kuwait+City",
+  "start_url": "index.html",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#00ff99",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "icon-192.png",

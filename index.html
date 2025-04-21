@@ -12,10 +12,7 @@
       width: 100%;
       height: 100%;
       overflow: hidden;
-      background: #000;
-    }
-    .cesium-viewer-toolbar {
-      display: none !important; /* Optional: Hide default Cesium tools */
+      background-color: #000;
     }
   </style>
 </head>
@@ -24,24 +21,27 @@
 
   <script src="https://cesium.com/downloads/cesiumjs/releases/1.113/Build/Cesium/Cesium.js"></script>
   <script>
-    // Initialize Cesium
+    // Optional: Set your Ion access token here (if needed)
+    // Cesium.Ion.defaultAccessToken = 'your_access_token_here';
+
     const viewer = new Cesium.Viewer('cesiumContainer', {
+      imageryProvider: new Cesium.IonImageryProvider({ assetId: 3 }), // Bing Satellite
       terrainProvider: Cesium.createWorldTerrain(),
       baseLayerPicker: false,
       timeline: false,
       animation: false,
-      geocoder: false,
       sceneModePicker: false,
+      geocoder: false,
       navigationHelpButton: false,
       homeButton: false,
     });
 
-    // Optional: Fly to a default location (e.g., Kuwait)
+    // Camera flies to Kuwait as default
     viewer.camera.flyTo({
-      destination: Cesium.Cartesian3.fromDegrees(47.9783, 29.3759, 1500000) // Lat/Lon/Height
+      destination: Cesium.Cartesian3.fromDegrees(47.9783, 29.3759, 1000000)
     });
 
-    // Add a marker (billboard) for user location
+    // Add marker at Kuwait
     viewer.entities.add({
       position: Cesium.Cartesian3.fromDegrees(47.9783, 29.3759),
       billboard: {
@@ -53,4 +53,3 @@
   </script>
 </body>
 </html>
-
